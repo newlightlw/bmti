@@ -715,6 +715,8 @@ footer {
 .code-tag {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 13px;
   background: var(--light);
   border: 1px solid #d2ddcc;

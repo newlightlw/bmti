@@ -12,12 +12,61 @@ buildSync({
   platform: "node",
   format: "esm",
 });
+buildSync({
+  entryPoints: ["lib/portrait.ts"],
+  outfile: join(dir, "portrait.mjs"),
+  bundle: true,
+  platform: "node",
+  format: "esm",
+});
+const { presentPortrait } = await import(join(dir, "portrait.mjs"));
 const { questions, drawQuestions, makeReport, endpoints, roles } = await import(
   join(dir, "hgp.mjs")
 );
 process.on("exit", () => rmSync(dir, { recursive: true, force: true }));
 const answers = (values = {}) =>
   questions.map((q) => ({ id: q.id, value: values[q.endpoint] ?? 2 }));
+test("subthreshold means produce a personal portrait without forcing a role", () => {
+  const totals = { V: 11, R: 9, T: 11, A: 13, S: 12, F: 11, I: 12, C: 9 };
+  const counts = {};
+  const input = questions.map((q) => {
+    const index = counts[q.endpoint] || 0;
+    counts[q.endpoint] = index + 1;
+    const total = totals[q.endpoint];
+    return { id: q.id, value: Math.floor(total / 4) + (index < total % 4 ? 1 : 0) };
+  });
+  const report = makeReport("合成回归", questions, input);
+  const before = JSON.stringify(report);
+  const portrait = presentPortrait(JSON.parse(before));
+  assert.equal(report.code, "????");
+  assert.equal(report.role, null);
+  assert.deepEqual(portrait.dimensions.map((d) => d.status), [
+    "愿景分数略高", "试做分数略高", "有序分数略高", "自主分数略高",
+  ]);
+  assert.match(portrait.summary, /愿景略高；试做略高；有序略高；自主略高/);
+  assert.match(portrait.dimensions[2].description, /0.25分/);
+  assert.match(portrait.dimensions[3].description, /0.75分/);
+  assert.equal(portrait.badge.includes("?"), false);
+  assert.equal(portrait.summary.includes("????"), false);
+  assert.equal(JSON.stringify(report), before);
+});
+test("portrait distinguishes ties, dual endorsement, low fit, missing and clear roles", () => {
+  for (const [value, status] of [[0, "两端较少符合"], [2, "两端得分相同"], [3, "两端都认同"]]) {
+    const report = makeReport("合成", questions, questions.map((q) => ({ id: q.id, value })));
+    assert.equal(presentPortrait(report).dimensions[0].status, status);
+    assert.equal(report.role, null);
+  }
+  const input = answers();
+  input.filter((a) => ["N01", "N09"].includes(a.id)).forEach((a) => { a.value = "skipped"; });
+  const missing = presentPortrait(makeReport("合成", questions, input));
+  assert.equal(missing.dimensions[0].status, "信息不足");
+  assert.match(missing.dimensions[0].description, /另一端不足3道/);
+  const allMissing = presentPortrait(makeReport("合成", questions, questions.map((q) => ({ id: q.id, value: "unable" }))));
+  assert.match(allMissing.dimensions[0].description, /两端均不足/);
+  const clear = makeReport("合成", questions, answers({ V: 4, T: 4, F: 4, I: 4 }));
+  assert.equal(presentPortrait(clear).title, "旷野哲思者");
+  assert.equal(presentPortrait(clear).badge, "VTFI");
+});
 test("all draw counts are unique and balanced across eight endpoints", () => {
   for (let n = 8; n <= 32; n++) {
     for (let run = 0; run < 20; run++) {

@@ -16,6 +16,7 @@ import {
   type Endpoint,
   type Report,
 } from "@/lib/hgp";
+import { presentPortrait } from "@/lib/portrait";
 type Item = { id: string; text: string };
 type Attempt = {
   id: string;
@@ -72,6 +73,7 @@ export default function Experience() {
     [error, setError] = useState(""),
     [ready, setReady] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
+  const portrait = report ? presentPortrait(report) : null;
   useEffect(() => {
     let live = true;
     async function load() {
@@ -214,19 +216,19 @@ export default function Experience() {
           <div className="loading">
             <LoaderCircle className="spin" /> 正在准备你的探索…
           </div>
-        ) : report ? (
+        ) : report && portrait ? (
           <>
             <div className="report-top">
               <span className="eyebrow">YOUR GROWTH PORTRAIT</span>
               <p>{report.nickname}，这是你的本次同行画像</p>
               <h1 ref={heading} tabIndex={-1}>
-                {report.role || "不止一种可能的自己"}
+                {portrait.title}
               </h1>
               <div className="code-tag">
-                {report.code}{" "}
-                <span>{report.role ? "偏好组合" : "暂不确定完整角色"}</span>
+                {portrait.badge}{" "}
+                <span>{portrait.label}</span>
               </div>
-              <p className="report-summary">{report.summary}</p>
+              <p className="report-summary">{portrait.summary}</p>
               <div className="report-meta">
                 <span>
                   {report.total} 道题 · {report.valid} 道有效回答
@@ -242,9 +244,10 @@ export default function Experience() {
                 <span>01 / PREFERENCE MAP</span>
                 <h2>你的四个成长坐标</h2>
                 <p>每一端分别计分。得分表示认同程度，不代表能力高低。</p>
+                <p>{portrait.roleNote}</p>
               </div>
               <div className="dimension-grid">
-                {report.dimensions.map((d, i) => (
+                {portrait.dimensions.map((d, i) => (
                   <section className="dimension-card" key={d.name}>
                     <div className="dimension-heading">
                       <span className="dimension-index">0{i + 1}</span>

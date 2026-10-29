@@ -46,3 +46,7 @@ yarn-error.log*
 
 # Document variable names without exposing values.
 !.env.example
+
+# Standalone release and local SQLite runtime
+/selfhost-dist/
+/selfhost-data/

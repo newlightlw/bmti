@@ -9,9 +9,11 @@
 - 服务端计算八端均值与四组判断；仅四组都明确才显示对应16画像之一。双高、双低、接近和有效题量不足分别说明，不强配角色。
 - 报告含解释、待本人核对的陪伴建议、浏览器打印/保存PDF入口和删除当前记录入口。
 - 管理口令登录；8—32题任意整数、四个快捷题量；服务端保存配置、题库筛选预览；配置只影响新测试。
-- Cloudflare D1持久化。报告凭随机浏览器Cookie归属，不按昵称检索，不在管理端展示私人答案。
+- Sites版使用Cloudflare D1；腾讯云独立版使用SQLite。报告凭随机浏览器Cookie归属，不按昵称检索，不在管理端展示私人答案。
 
 默认32题；每端至少3个有效数值答案才发布均值。少于24题时不能形成完整角色；24题以上也可能由于跳过、并重或接近而未定。
+
+个人画像与16角色分类分别呈现：未形成角色时不显示问号，改为八端得分生成的四维摘要和具体解释，保留略高、同分、双高／双低与信息不足。旧报告重新加载也能获得新解释，不改历史答案、分数及分类阈值。详见[呈现修订](../../docs/HGP_PORTRAIT_FIX_2026-10-29.md)。
 
 ## 本地开发
 
@@ -54,3 +56,19 @@ HTTP检查默认使用`http://127.0.0.1:5187`；可通过`HGP_TEST_URL`指定同
 ## Sites发布
 
 保留`.openai/hosting.json`中的项目ID和D1绑定；按Sites技能执行source helper同步与打包，再保存部署。同一站点勿重复创建。运行时秘密与源码分开配置。
+
+## 腾讯云独立部署
+
+已发布：[用户端](https://bmti.myassist.cn/)、[管理端](https://bmti.myassist.cn/admin)。使用Node 24、Nginx、systemd与SQLite，复用现有UI和API。完整运维、验证及回滚记录见[部署说明](../../docs/HGP_TENCENT_DEPLOY_2026-10-29.md)。旧Sites站点和数据库独立保留，历史记录未迁移。
+
+```sh
+npm ci
+npm test
+npm run test:selfhost
+npm run typecheck
+npm run build:selfhost
+```
+
+构建输出`selfhost-dist/`，运行入口`node selfhost-dist/server.mjs`。运行前在进程环境设置`HGP_ADMIN_HASH`、`HGP_PUBLIC_ORIGIN`（精确来源，不带尾斜杠）、`HGP_DATABASE_PATH`（仓库外持久路径），可选`PORT`默认8787；只监听本机回环。迁移随构建打包并启动时校验应用，不能改动已应用SQL。环境与数据库不得打进发布包。
+
+部署模板位于`selfhost/deploy/`；现有激活脚本用于本次已核验服务器与域名，依赖带校验清单的发布包及预置私有环境，并非任意服务器的一键安装器。重新构建会重建输出目录，打包时需另行加入部署脚本、发布元数据与`SHA256SUMS`。正式数据位于`/home/liw/.local/share/heretoo-hgp/`，更新发布目录不替换数据。
