@@ -1,67 +1,36 @@
 # 同行画像 · HGP
 
-独立于HereToo主应用的昵称测试站。用户端 `/`，管理端 `/admin`。题本与计分版本为HGP-0.2，32题原文来自HereToo文档；原创模型仍待用户验证。
+HereToo Growth Profile：一个帮助用户认识成长偏好的独立问卷系统。仓库名为 `bmti`，模型简称仍为 **HGP**；它是待验证的原创模型，不是 MBTI 官方测试或心理诊断。
 
-## 已实现
+- **正式用户端：** https://bmti.myassist.cn/
+- **管理端：** https://bmti.myassist.cn/admin
+- **交接入口：** [当前状态与下一步](docs/HANDOFF.md)
+- **核心文档：** [完整阅读目录](docs/README.md)
 
-- 昵称开测；每次按八端均衡随机抽题并打乱顺序；上一题、题目导航、跳过、重做。
-- 同一标签页内保存未提交草稿，刷新回到第一道未回答题；完成后报告可在同一浏览器重载。
-- 服务端计算八端均值与四组判断；仅四组都明确才显示对应16画像之一。双高、双低、接近和有效题量不足分别说明，不强配角色。
-- 报告含解释、待本人核对的陪伴建议、浏览器打印/保存PDF入口和删除当前记录入口。
-- 管理口令登录；8—32题任意整数、四个快捷题量；服务端保存配置、题库筛选预览；配置只影响新测试。
-- Sites版使用Cloudflare D1；腾讯云独立版使用SQLite。报告凭随机浏览器Cookie归属，不按昵称检索，不在管理端展示私人答案。
+## 系统可以做什么
 
-默认32题；每端至少3个有效数值答案才发布均值。少于24题时不能形成完整角色；24题以上也可能由于跳过、并重或接近而未定。
+用户输入昵称后随机答题，支持上一题、跳过、草稿恢复、重做、报告重载和删除。报告展示八端均分、四维偏好解释与可核对的陪伴建议；四组都达到分类门槛时，另展示16种角色之一。未定角色仍有具体画像，不显示问号。
 
-个人画像与16角色分类分别呈现：未形成角色时不显示问号，改为八端得分生成的四维摘要和具体解释，保留略高、同分、双高／双低与信息不足。旧报告重新加载也能获得新解释，不改历史答案、分数及分类阈值。详见[呈现修订](../../docs/HGP_PORTRAIT_FIX_2026-10-29.md)。
+管理端用独立口令登录，配置每次8—32题、查看题库。默认32题，按八端均衡抽样；当前后台不能编辑题文、评分规则或角色。这些修改通过代码与文档评审完成。
 
-## 本地开发
+## 五分钟了解项目
 
-Node >=22.13。
+| 你要做什么 | 先读 | 主要文件 |
+| --- | --- | --- |
+| 理解产品、四维与边界 | [产品说明](docs/PRODUCT.md) | `lib/hgp.ts` |
+| 优化题库 | [题本与示例](docs/research/HGP_V02_QUESTIONNAIRE_2026-10-28.md)、[偏差审查](docs/research/HGP_V02_AUDIT_2026-10-28.md) | `lib/questions.json`、`tests/fixtures/approved-questions.md` |
+| 调整计分 | [计分与版本限制](docs/SCORING.md) | `lib/hgp.ts`、`tests/hgp.test.mjs` |
+| 优化画像与解释 | [16角色与访谈](docs/research/HGP_V02_PROFILES_VALIDATION_2026-10-28.md) | `lib/portrait.ts`、`lib/hgp.ts` |
+| 本地运行与测试 | [开发指南](docs/DEVELOPMENT.md) | `selfhost/`、`tests/` |
+| 协作提交与发布 | [贡献流程](CONTRIBUTING.md)、[部署说明](docs/DEPLOYMENT.md) | `.github/pull_request_template.md` |
 
-```sh
-npm ci
-npm run db:generate
-npm run build
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_peaceful_skaar.sql
-npm run dev -- --port 5187
-```
+## 本地运行：推荐 Node + SQLite
 
-迁移只需对新的本地数据库应用一次，不重复执行已应用SQL；以后追加迁移，不改历史SQL。Sites发布时应用云端迁移。本地和云端数据库不同。
-
-管理口令使用运行时秘密 `HGP_ADMIN_HASH`，值为高熵管理口令的SHA-256十六进制摘要，不能用昵称或公开信息作为口令。开发时写入未跟踪的根目录 `.dev.vars`，生产用Sites环境变量工具以secret配置，不能放进hosting manifest或前端。源仓库和部署包不得含本机口令文件、`.dev.vars`、数据库、Cookie或测试结果原始数据。
-
-管理登录Cookie最长8小时、HttpOnly、SameSite=Strict，HTTPS下Secure。数据库只存会话token摘要；登出即撤销。登录错误限制为每来源地址15分钟8次；变更请求校验同源Origin。
-
-## 验证
+需要 Node **24**、npm；HTTP集成测试另外需要 Python 3。不需要腾讯云账号、生产口令或 Cloudflare 账号。
 
 ```sh
-npm test
-npm run typecheck
-npm run build
-python3 tests/api_smoke.py
-```
-
-HTTP检查默认使用`http://127.0.0.1:5187`；可通过`HGP_TEST_URL`指定同一项目的隔离预览。`HGP_ADMIN_PASSWORD_FILE`指定本机私有口令文件，默认`~/.config/heretoo-hgp/admin-access.txt`。文件需含`管理口令：`加口令的一行。HTTP脚本只用合成昵称与答案，最后恢复32题；不要在有真实用户参与的线上运行整套配置变更测试。
-
-单元测试覆盖8—32题均衡抽样、16类型组合、双高/低/中间及缺失、输入校验、题文与独立冻结参考一致。HTTP检查覆盖认证、限流、来源校验、题量、测试快照、报告隔离与重载、幂等提交和删除。浏览器与手机宽度结果见HereToo交接说明。
-
-## 数据与能力边界
-
-- 记录30天内可访问；过期后拒绝读取，在后续开测时清理过期记录，无独立定时清理任务。不宣称到期瞬间物理删除。
-- 删除按钮清理当前测试的昵称、题目快照、答案与报告。昵称不是身份凭据；清Cookie或换浏览器不能找回原报告。
-- 未接入HereToo聊天、记忆、LLM或第三方成长文稿；报告基于题本规则和固定解释，不是临床诊断或经验证的匹配效果。
-- 浏览器打印/保存PDF由浏览器执行，不调用云端文档服务。真实手机设备与用户效果另行验收。
-
-## Sites发布
-
-保留`.openai/hosting.json`中的项目ID和D1绑定；按Sites技能执行source helper同步与打包，再保存部署。同一站点勿重复创建。运行时秘密与源码分开配置。
-
-## 腾讯云独立部署
-
-已发布：[用户端](https://bmti.myassist.cn/)、[管理端](https://bmti.myassist.cn/admin)。使用Node 24、Nginx、systemd与SQLite，复用现有UI和API。完整运维、验证及回滚记录见[部署说明](../../docs/HGP_TENCENT_DEPLOY_2026-10-29.md)。旧Sites站点和数据库独立保留，历史记录未迁移。
-
-```sh
+git clone https://github.com/newlightlw/bmti.git
+cd bmti
 npm ci
 npm test
 npm run test:selfhost
@@ -69,6 +38,33 @@ npm run typecheck
 npm run build:selfhost
 ```
 
-构建输出`selfhost-dist/`，运行入口`node selfhost-dist/server.mjs`。运行前在进程环境设置`HGP_ADMIN_HASH`、`HGP_PUBLIC_ORIGIN`（精确来源，不带尾斜杠）、`HGP_DATABASE_PATH`（仓库外持久路径），可选`PORT`默认8787；只监听本机回环。迁移随构建打包并启动时校验应用，不能改动已应用SQL。环境与数据库不得打进发布包。
+按[开发指南：创建个人配置](docs/DEVELOPMENT.md#创建个人配置)生成仓库外的开发环境和管理口令，然后启动：
 
-部署模板位于`selfhost/deploy/`；现有激活脚本用于本次已核验服务器与域名，依赖带校验清单的发布包及预置私有环境，并非任意服务器的一键安装器。重新构建会重建输出目录，打包时需另行加入部署脚本、发布元数据与`SHA256SUMS`。正式数据位于`/home/liw/.local/share/heretoo-hgp/`，更新发布目录不替换数据。
+```sh
+node --env-file="$HOME/.config/bmti/development.env" selfhost-dist/server.mjs
+```
+
+打开 http://127.0.0.1:5189/ 和 http://127.0.0.1:5189/admin 。独立版修改后需重新构建、重启；没有自动热更新。另一种 Sites/Vinext 开发方式见开发指南。
+
+## 核心目录
+
+```text
+app/                  用户界面、管理界面、共享API
+lib/hgp.ts            32题抽样、八端计分、四维判断、16角色名
+lib/questions.json    当前 HGP-0.2 题库
+lib/portrait.ts       个人画像呈现；兼容已有报告
+selfhost/             Node 24 + SQLite 运行与部署代码
+worker/               Sites / Cloudflare Worker 入口
+db/、drizzle/         数据结构与迁移
+tests/                计分、题文与HTTP回归
+docs/                 交接、设计、运维及研究材料
+```
+
+## 当前状态与重要限制
+
+- 测评版本 **HGP-0.2**，32题、八端各4题；呈现修订 **portrait-20261029**。每端至少3个有效答案，缺失不计0。少于24题不能形成完整角色。
+- 2026-10-29 已发布腾讯云与旧 Sites 两个站点，数据库相互独立。克隆仓库只获得源码和文档，没有历史答卷或生产权限。
+- 当前还没有完整多版本题库路由。记录只存题号列表，读取题文依赖当前题库；发布新题本前必须先解决进行中测试兼容。详见[版本限制](docs/SCORING.md#版本与兼容限制)。
+- 报告保存于服务端，浏览器随机 Cookie 标识归属；昵称不是账号，管理端不展示私人答卷。30天内可访问，过期数据在后续开测时清理，没有独立删除定时器。
+- 未接入 LLM 或 HereToo 聊天；测试通过不代表人格结构、阈值或陪伴效果已验证。真实研究仍待开展。
+- 本轮上传不会自动部署生产。仓库不含管理口令、秘密摘要、数据库、Cookie、真实逐题答案或原始UP主文稿。生产资料由维护者通过私有渠道单独交接。

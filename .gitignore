@@ -50,3 +50,14 @@ yarn-error.log*
 # Standalone release and local SQLite runtime
 /selfhost-dist/
 /selfhost-data/
+
+# Private databases and sidecars at any location
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.db-wal
+*.db-shm

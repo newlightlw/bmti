@@ -1,6 +1,6 @@
 # Approved HGP-0.2 wording
 
-Source: docs/HGP_V02_QUESTIONNAIRE_2026-10-28.md, 2026-10-28.
+Source: docs/research/HGP_V02_QUESTIONNAIRE_2026-10-28.md, 2026-10-28.
 Frozen reference for wording regression checks.
 
 | N01 | 选择一件值得投入时间的事时，我喜欢先看它是否贴近我重视的生活方向。 | V |
