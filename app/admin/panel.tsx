@@ -10,7 +10,7 @@ import {
   LoaderCircle,
   Shuffle,
 } from "lucide-react";
-import { endpointNames, type Endpoint } from "@/lib/hgp";
+import { endpointNames, type Endpoint } from "@/lib/bmti";
 type AdminData = {
   questionCount: number;
   updatedAt: number | null;
@@ -88,7 +88,7 @@ export default function Admin() {
             <Compass size={22} />
           </span>
           <span>
-            HereToo <span className="brand-divider">/</span>
+            BMTI <span className="brand-divider">/</span>
             <b>研究工作台</b>
           </span>
         </a>
@@ -106,7 +106,7 @@ export default function Admin() {
             <div className="login-icon">
               <LockKeyhole size={26} />
             </div>
-            <span className="eyebrow">HGP / ADMINISTRATION</span>
+            <span className="eyebrow">BMTI / ADMINISTRATION</span>
             <h1>管理你的探索题库</h1>
             <p>使用独立管理口令登录。</p>
             <form onSubmit={login}>
@@ -130,7 +130,7 @@ export default function Admin() {
           <>
             <div className="admin-heading">
               <div>
-                <span className="eyebrow">QUESTION BANK / HGP-0.2</span>
+                <span className="eyebrow">QUESTION BANK / BMTI-0.2</span>
                 <h1>
                   把探索的节奏，
                   <br />
@@ -290,8 +290,8 @@ export default function Admin() {
         )}
       </main>
       <footer>
-        <span>HereToo · 同行画像</span>
-        <span>题库与计分版本 HGP-0.2</span>
+        <span>BMTI · Better Me Type Indicator</span>
+        <span>题库与计分版本 BMTI-0.2</span>
       </footer>
     </div>
   );

@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createHash } from "node:crypto";
+import { legacy } from "../lib/legacy";
 
 type Value = string | number | null;
 class Statement {
@@ -33,8 +34,11 @@ export class SQLiteBinding {
     this.database.exec(
       "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;",
     );
+    const migrationTable = this.database.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+    ).get(legacy.migrationTable) ? legacy.migrationTable : "_bmti_migrations";
     this.database.exec(
-      "CREATE TABLE IF NOT EXISTS _hgp_migrations(name TEXT PRIMARY KEY,checksum TEXT NOT NULL)",
+      `CREATE TABLE IF NOT EXISTS ${migrationTable}(name TEXT PRIMARY KEY,checksum TEXT NOT NULL)`,
     );
     for (const name of readdirSync(migrations)
       .filter((n) => n.endsWith(".sql"))
@@ -42,7 +46,7 @@ export class SQLiteBinding {
       const sql = readFileSync(join(migrations, name), "utf8");
       const checksum = createHash("sha256").update(sql).digest("hex");
       const existing = this.database
-        .prepare("SELECT checksum FROM _hgp_migrations WHERE name=?")
+        .prepare(`SELECT checksum FROM ${migrationTable} WHERE name=?`)
         .get(name);
       if (existing) {
         if (existing.checksum !== checksum)
@@ -53,7 +57,7 @@ export class SQLiteBinding {
       try {
         this.database.exec(sql);
         this.database
-          .prepare("INSERT INTO _hgp_migrations VALUES(?,?)")
+          .prepare(`INSERT INTO ${migrationTable} VALUES(?,?)`)
           .run(name, checksum);
         this.database.exec("COMMIT");
       } catch (error) {

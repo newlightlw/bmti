@@ -11,14 +11,14 @@ Sites：Cloudflare D1       独立版：Node 24 + SQLite
 worker/index.ts           selfhost/server.ts → env.ts → sqlite.ts
 ```
 
-`lib/hgp.ts`负责抽样、输入与计分；`lib/portrait.ts`负责报告呈现。独立构建将`cloudflare:workers`绑定替换为SQLite环境，复用同一组API而非维护两套评分逻辑。
+`lib/bmti.ts`负责抽样、输入与计分；`lib/portrait.ts`负责报告呈现。独立构建将`cloudflare:workers`绑定替换为SQLite环境，复用同一组API而非维护两套评分逻辑。
 
 ## 文件索引
 
 | 位置 | 责任 |
 | --- | --- |
 | `lib/questions.json` | 当前32题，id/text/endpoint |
-| `lib/hgp.ts` | 版本、端点、角色名、均衡抽题、`makeReport` |
+| `lib/bmti.ts` | 版本、端点、角色名、均衡抽题、`makeReport` |
 | `lib/portrait.ts` | `presentPortrait`与旧报告展示 |
 | `app/experience.tsx` | 昵称、草稿、导航、报告、打印、删除 |
 | `app/admin/panel.tsx` | 管理登录、题量配置、题库预览 |
@@ -27,9 +27,9 @@ worker/index.ts           selfhost/server.ts → env.ts → sqlite.ts
 | `lib/server.ts` | Cookie、同源检查、口令摘要、会话核验 |
 | `db/schema.ts`、`drizzle/` | 数据结构与迁移 |
 | `selfhost/` | 静态构建、回环HTTP、SQLite与部署模板 |
-| `tests/hgp.test.mjs` | 9项领域与呈现回归 |
-| `selfhost/tests/sqlite.test.mjs` | 4项SQLite事务、迁移与持久化测试 |
-| `tests/api_smoke.py` | 8项隔离HTTP集成测试 |
+| `tests/bmti.test.mjs` | 9项领域与呈现回归；另有3项命名兼容回归 |
+| `selfhost/tests/sqlite.test.mjs` | 5项SQLite事务、迁移与持久化测试 |
+| `tests/api_smoke.py` | 10项隔离HTTP集成测试 |
 | `components/ui/`、`examples/` | Sites模板保留文件，非画像业务核心 |
 
 ## API概览

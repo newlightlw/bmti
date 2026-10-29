@@ -1,5 +1,5 @@
 import bank from "./questions.json";
-export const VERSION = "HGP-0.2";
+export const VERSION = "BMTI-0.2";
 export const endpoints = ["V", "R", "T", "A", "S", "F", "I", "C"] as const;
 export type Endpoint = (typeof endpoints)[number];
 export type Question = { id: string; text: string; endpoint: Endpoint };

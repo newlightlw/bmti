@@ -3,15 +3,15 @@ set -Eeuo pipefail
 umask 077
 [[ $EUID -eq 0 ]] || { echo '请在服务器使用 sudo bash 执行本脚本。' >&2; exit 1; }
 release=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
-[[ "$release" == /home/liw/heretoo-hgp-* ]] || { echo '非预期发布目录' >&2; exit 1; }
+[[ "$release" == /home/liw/heretoo-bmti-* ]] || { echo '非预期发布目录' >&2; exit 1; }
 domain=bmti.myassist.cn
-config=/etc/nginx/sites-available/heretoo-hgp
-enabled=/etc/nginx/sites-enabled/heretoo-hgp
-unit=/etc/systemd/system/heretoo-hgp.service
-current=/home/liw/heretoo-hgp-current
-env_file=/home/liw/.config/heretoo-hgp/server.env
-data=/home/liw/.local/share/heretoo-hgp
-for required in "$release/server.mjs" "$release/client/index.html" "$release/client/admin/index.html" "$release/deploy/nginx.conf" "$release/deploy/heretoo-hgp.service" "$env_file"; do
+config=/etc/nginx/sites-available/heretoo-bmti
+enabled=/etc/nginx/sites-enabled/heretoo-bmti
+unit=/etc/systemd/system/heretoo-bmti.service
+current=/home/liw/heretoo-bmti-current
+env_file=/home/liw/.config/heretoo-bmti/server.env
+data=/home/liw/.local/share/heretoo-bmti
+for required in "$release/server.mjs" "$release/client/index.html" "$release/client/admin/index.html" "$release/deploy/nginx.conf" "$release/deploy/heretoo-bmti.service" "$env_file"; do
     [[ -f "$required" ]] || { echo "缺少文件：$required" >&2; exit 1; }
 done
 (cd "$release" && sha256sum -c SHA256SUMS >/dev/null)
@@ -27,22 +27,22 @@ python3 - "$env_file" <<'PY'
 from pathlib import Path
 import re,sys
 p=Path(sys.argv[1]);values=dict(line.split('=',1) for line in p.read_text().splitlines() if line and not line.startswith('#'))
-assert values['HGP_PUBLIC_ORIGIN']=='https://bmti.myassist.cn'
-assert values['HGP_DATABASE_PATH']=='/home/liw/.local/share/heretoo-hgp/hgp.sqlite3'
+assert values['BMTI_PUBLIC_ORIGIN']=='https://bmti.myassist.cn'
+assert values['BMTI_DATABASE_PATH']=='/home/liw/.local/share/heretoo-bmti/bmti.sqlite3'
 assert values['PORT']=='8787'
-assert re.fullmatch('[a-f0-9]{64}',values['HGP_ADMIN_HASH'])
+assert re.fullmatch('[a-f0-9]{64}',values['BMTI_ADMIN_HASH'])
 assert p.stat().st_mode & 0o077 == 0
 PY
 nginx -t
-backup=$(mktemp -d /var/backups/heretoo-hgp-XXXXXXXX)
-was_active=$(systemctl is-active heretoo-hgp.service || true)
-was_enabled=$(systemctl is-enabled heretoo-hgp.service 2>/dev/null || true)
+backup=$(mktemp -d /var/backups/heretoo-bmti-XXXXXXXX)
+was_active=$(systemctl is-active heretoo-bmti.service || true)
+was_enabled=$(systemctl is-enabled heretoo-bmti.service 2>/dev/null || true)
 [[ ! -e "$config" ]] || cp -a "$config" "$backup/nginx.conf"
 [[ ! -e "$unit" ]] || cp -a "$unit" "$backup/service"
 if [[ -L "$current" ]]; then readlink "$current" > "$backup/previous-current"; fi
 if [[ -L "$enabled" ]]; then readlink "$enabled" > "$backup/previous-enabled"; fi
-if [[ -f "$data/hgp.sqlite3" ]]; then
-    python3 - "$data/hgp.sqlite3" "$backup/hgp.sqlite3" <<'PY'
+if [[ -f "$data/bmti.sqlite3" ]]; then
+    python3 - "$data/bmti.sqlite3" "$backup/bmti.sqlite3" <<'PY'
 import sqlite3,sys
 with sqlite3.connect(sys.argv[1]) as src, sqlite3.connect(sys.argv[2]) as dst: src.backup(dst)
 PY
@@ -53,8 +53,8 @@ cat > "$backup/rollback.sh" <<ROLLBACK
 #!/usr/bin/env bash
 set -eu
 [[ \$EUID -eq 0 ]]
-systemctl stop heretoo-hgp.service || true
-systemctl disable heretoo-hgp.service 2>/dev/null || true
+systemctl stop heretoo-bmti.service || true
+systemctl disable heretoo-bmti.service 2>/dev/null || true
 if [[ -f '$backup/service' ]]; then cp -a '$backup/service' '$unit'; else rm -f '$unit'; fi
 if [[ -f '$backup/nginx.conf' ]]; then cp -a '$backup/nginx.conf' '$config'; else rm -f '$config'; fi
 rm -f '$enabled'
@@ -62,8 +62,8 @@ if [[ -f '$backup/previous-enabled' ]]; then ln -s "\$(cat '$backup/previous-ena
 rm -f '$current'
 if [[ -f '$backup/previous-current' ]]; then ln -s "\$(cat '$backup/previous-current')" '$current'; fi
 systemctl daemon-reload
-if [[ '$was_enabled' == enabled ]]; then systemctl enable heretoo-hgp.service; else systemctl disable heretoo-hgp.service 2>/dev/null || true; fi
-if [[ '$was_active' == active ]]; then systemctl start heretoo-hgp.service; fi
+if [[ '$was_enabled' == enabled ]]; then systemctl enable heretoo-bmti.service; else systemctl disable heretoo-bmti.service 2>/dev/null || true; fi
+if [[ '$was_active' == active ]]; then systemctl start heretoo-bmti.service; fi
 nginx -t && systemctl reload nginx
 printf '已恢复发布前的服务和Nginx。备份目录：%s\n' '$backup'
 ROLLBACK
@@ -77,13 +77,13 @@ rollback_on_failure() {
 }
 trap rollback_on_failure ERR
 install -d -m 700 -o liw -g liw "$data"
-install -d -m 755 /var/www/heretoo-hgp-acme
-install -m 644 "$release/deploy/heretoo-hgp.service" "$unit"
+install -d -m 755 /var/www/heretoo-bmti-acme
+install -m 644 "$release/deploy/heretoo-bmti.service" "$unit"
 ln -s "$release" "$current.next"
 mv -Tf "$current.next" "$current"
 systemctl daemon-reload
-systemctl enable --now heretoo-hgp.service
-systemctl restart heretoo-hgp.service
+systemctl enable --now heretoo-bmti.service
+systemctl restart heretoo-bmti.service
 for attempt in {1..20}; do
     if curl --fail --silent http://127.0.0.1:8787/api/health > "$backup/health.json"; then break; fi
     sleep 1
@@ -103,7 +103,7 @@ else
     systemctl daemon-reload
     systemctl reload nginx
     # Reuse the server's existing ACME account, without new ToS acceptance.
-    certbot certonly --webroot -w /var/www/heretoo-hgp-acme -d "$domain" --cert-name "$domain" --non-interactive --keep-until-expiring
+    certbot certonly --webroot -w /var/www/heretoo-bmti-acme -d "$domain" --cert-name "$domain" --non-interactive --keep-until-expiring
 fi
 openssl x509 -in "$certificate" -noout -checkhost "$domain"
 openssl x509 -in "$certificate" -noout -checkend 86400
@@ -128,7 +128,7 @@ PY_READY
     sleep 1
 done
 if [[ "$https_ready" != 1 ]]; then
-    echo 'Nginx在等待后仍未提供目标证书和HGP健康接口。' >&2
+    echo 'Nginx在等待后仍未提供目标证书和BMTI健康接口。' >&2
     cat "$backup/tls-last-error" >&2
 fi
 [[ "$https_ready" == 1 ]]
@@ -143,4 +143,4 @@ PY
 status=$(curl --noproxy '*' --silent --output /dev/null --write-out '%{http_code}' --resolve "$domain:443:127.0.0.1" "https://$domain/api/admin")
 [[ "$status" == 401 ]]
 trap - ERR
-printf '\nHGP 已激活：https://%s/\n管理端：https://%s/admin\n回滚：sudo bash %s/rollback.sh\n' "$domain" "$domain" "$backup"
+printf '\nBMTI 已激活：https://%s/\n管理端：https://%s/admin\n回滚：sudo bash %s/rollback.sh\n' "$domain" "$domain" "$backup"

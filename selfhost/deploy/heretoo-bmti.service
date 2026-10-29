@@ -1,0 +1,22 @@
+[Unit]
+Description=HereToo BMTI questionnaire
+After=network.target
+
+[Service]
+Type=simple
+User=liw
+Group=liw
+WorkingDirectory=/home/liw/heretoo-bmti-current
+EnvironmentFile=/home/liw/.config/heretoo-bmti/server.env
+ExecStart=/usr/bin/node /home/liw/heretoo-bmti-current/server.mjs
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/liw/.local/share/heretoo-bmti
+
+[Install]
+WantedBy=multi-user.target

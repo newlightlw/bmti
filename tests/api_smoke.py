@@ -1,7 +1,7 @@
 """HTTP integration checks against a local preview; synthetic data only."""
-import http.cookiejar,json,os,pathlib,unittest,urllib.request,urllib.error,uuid
-BASE=os.environ.get('HGP_TEST_URL','http://127.0.0.1:5187')
-SECRET=pathlib.Path(os.environ.get('HGP_ADMIN_PASSWORD_FILE',str(pathlib.Path.home()/'.config/heretoo-hgp/admin-access.txt')))
+import copy,http.cookiejar,json,os,pathlib,unittest,urllib.request,urllib.error,uuid
+BASE=os.environ.get('BMTI_TEST_URL','http://127.0.0.1:5187')
+SECRET=pathlib.Path(os.environ.get('BMTI_ADMIN_PASSWORD_FILE',str(pathlib.Path.home()/'.config/heretoo-bmti/admin-access.txt')))
 class Browser:
  def __init__(self):self.jar=http.cookiejar.CookieJar();self.http=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
  def request(self,path,body=None,method=None,origin=BASE,**headers):
@@ -65,6 +65,33 @@ class API(unittest.TestCase):
   b=Browser();password=SECRET.read_text().split('管理口令：')[1].splitlines()[0]
   self.assertEqual(b.request('/api/admin',{'action':'login','password':password})[0],200)
   self.assertEqual(b.request('/api/admin',{'action':'logout'})[0],200);self.assertEqual(b.request('/api/admin')[0],401)
+ def test_legacy_visitor_retains_report_ownership(self):
+  a=self.start()
+  original=next(c for c in self.user.jar if c.name=='bmti_visitor')
+  old=copy.copy(original);old.name='hgp_visitor'
+  self.user.jar.clear();self.user.jar.set_cookie(old)
+  self.assertEqual(self.user.request('/api/test?id='+a['id'])[0],200)
+  new=self.user.request('/api/test',{'action':'start','nickname':'合成兼容验证'})
+  self.assertEqual(new[0],200)
+  migrated=next(c for c in self.user.jar if c.name=='bmti_visitor')
+  self.assertEqual(migrated.value,original.value)
+  self.assertEqual(self.user.request('/api/test?id='+a['id'])[0],200)
+ def test_logout_revokes_new_and_legacy_admin_sessions(self):
+  password=SECRET.read_text().split('管理口令：')[1].splitlines()[0]
+  old=Browser();new=Browser()
+  for b in [old,new]:self.assertEqual(b.request('/api/admin',{'action':'login','password':password})[0],200)
+  old_cookie=copy.copy(next(c for c in old.jar if c.name=='bmti_admin'));old_cookie.name='hgp_admin'
+  old.jar.clear();old.jar.set_cookie(old_cookie)
+  self.assertEqual(old.request('/api/admin')[0],200)
+  current=copy.copy(next(c for c in new.jar if c.name=='bmti_admin'))
+  old.jar.set_cookie(current)
+  response=old.request('/api/admin',{'action':'logout'})
+  self.assertEqual(response[0],200)
+  self.assertEqual(len(response[2].get_all('Set-Cookie')),2)
+  self.assertEqual(old.request('/api/admin')[0],401)
+  old.jar.set_cookie(old_cookie)
+  self.assertEqual(old.request('/api/admin')[0],401)
+  self.assertEqual(new.request('/api/admin')[0],401)
  def test_login_rate_limit(self):
   b=Browser();headers={'CF-Connecting-IP':'synthetic-'+str(uuid.uuid4())}
   for i in range(8):self.assertEqual(b.request('/api/admin',{'action':'login','password':'deliberately-wrong'},**headers)[0],401)

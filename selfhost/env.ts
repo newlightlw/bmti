@@ -1,14 +1,16 @@
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SQLiteBinding } from "./sqlite";
+import { environmentValue } from "../lib/legacy";
 process.umask(0o077);
 const release = dirname(fileURLToPath(import.meta.url));
-if (!process.env.HGP_DATABASE_PATH)
-  throw new Error("HGP_DATABASE_PATH is required");
+const databasePath = environmentValue("BMTI_DATABASE_PATH", process.env);
+if (!databasePath)
+  throw new Error("BMTI_DATABASE_PATH is required");
 export const env = {
   DB: new SQLiteBinding(
-    process.env.HGP_DATABASE_PATH,
+    databasePath,
     join(release, "migrations"),
   ),
-  HGP_ADMIN_HASH: process.env.HGP_ADMIN_HASH,
+  BMTI_ADMIN_HASH: environmentValue("BMTI_ADMIN_HASH", process.env),
 };

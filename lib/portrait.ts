@@ -1,7 +1,7 @@
-import { dimensions, endpointNames, type Report } from "./hgp";
+import { dimensions, endpointNames, type Report } from "./bmti";
 
 // Presentation only: preserve the recorded answers, scores and role decision.
-// Derive from scores so previously saved HGP-0.2 reports benefit on reload too.
+// Derive from scores so previously saved BMTI-0.2 reports benefit on reload too.
 export function presentPortrait(report: Report) {
   const results = dimensions.map((d, index) => {
     const [left, right] = d.pair;

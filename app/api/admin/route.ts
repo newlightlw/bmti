@@ -1,8 +1,8 @@
 import {
   admin,
   adminHash,
+  adminTokens,
   body,
-  cookie,
   db,
   hash,
   json,
@@ -10,7 +10,8 @@ import {
   randomToken,
   setCookie,
 } from "@/lib/server";
-import { questions, endpoints } from "@/lib/hgp";
+import { questions, endpoints } from "@/lib/bmti";
+import { legacy } from "@/lib/legacy";
 export async function GET(r: Request) {
   if (!(await admin(r))) return json({ authenticated: false }, 401);
   const setting = await db()
@@ -73,18 +74,19 @@ export async function POST(r: Request) {
         .bind(await hash(token), now + 8 * 3600000),
     ]);
     return json({ ok: true }, 200, {
-      "Set-Cookie": setCookie(r, "hgp_admin", token, 8 * 3600),
+      "Set-Cookie": setCookie(r, "bmti_admin", token, 8 * 3600),
     });
   }
   if (!(await admin(r))) return json({ error: "请先登录管理端" }, 401);
   if (b.action === "logout") {
-    await db()
-      .prepare("DELETE FROM admin_sessions WHERE token_hash=?")
-      .bind(await hash(cookie(r, "hgp_admin")))
-      .run();
-    return json({ ok: true }, 200, {
-      "Set-Cookie": setCookie(r, "hgp_admin", "", 0),
+    const hashes = await Promise.all(adminTokens(r).map(hash));
+    await db().batch(hashes.map((value) => db()
+      .prepare("DELETE FROM admin_sessions WHERE token_hash=?").bind(value)));
+    const response = json({ ok: true }, 200, {
+      "Set-Cookie": setCookie(r, "bmti_admin", "", 0),
     });
+    response.headers.append("Set-Cookie", setCookie(r, legacy.adminCookie, "", 0));
+    return response;
   }
   if (b.action === "settings") {
     if (

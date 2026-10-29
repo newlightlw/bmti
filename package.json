@@ -1,5 +1,5 @@
 {
-  "name": "site-creator-vinext-starter",
+  "name": "bmti",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -12,7 +12,7 @@
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "test": "node --test tests/hgp.test.mjs",
+    "test": "node --test tests/bmti.test.mjs tests/legacy.test.mjs",
     "typecheck": "tsc --noEmit",
     "build:selfhost": "node selfhost/build.mjs",
     "test:selfhost": "node --test selfhost/tests/sqlite.test.mjs"

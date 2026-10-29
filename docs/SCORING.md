@@ -1,8 +1,8 @@
 # 计分、呈现与版本
 
-权威实现：`lib/hgp.ts`；独立呈现：`lib/portrait.ts`；题库：`lib/questions.json`。规则与示例详见[完整题本](research/HGP_V02_QUESTIONNAIRE_2026-10-28.md)。模型与阈值均待验证，不展示准确率或人格百分比。
+权威实现：`lib/bmti.ts`；独立呈现：`lib/portrait.ts`；题库：`lib/questions.json`。规则与示例详见[完整题本](research/BMTI_V02_QUESTIONNAIRE_2026-10-28.md)。模型与阈值均待验证，不展示准确率或人格百分比。
 
-## 当前 HGP-0.2
+## 当前 BMTI-0.2
 
 32题，V/R/T/A/S/F/I/C各4题。每题只给所属端点评分，0—4正向计分，端点之间不互相扣分。`unable`、`skipped`不计0；每端至少3个有效数值答案才计算均值。
 

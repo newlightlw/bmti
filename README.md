@@ -1,6 +1,8 @@
-# 同行画像 · HGP
+# BMTI · Better Me Type Indicator
 
-HereToo Growth Profile：一个帮助用户认识成长偏好的独立问卷系统。仓库名为 `bmti`，模型简称仍为 **HGP**；它是待验证的原创模型，不是 MBTI 官方测试或心理诊断。
+**了解自己，探索边界，成为更好的自己。**
+
+BMTI 是一个帮助用户认识成长偏好的独立自我探索系统，英文全称为 **Better Me Type Indicator**。它是待验证的原创模型，不是 MBTI 官方测试或心理诊断。
 
 - **正式用户端：** https://bmti.myassist.cn/
 - **管理端：** https://bmti.myassist.cn/admin
@@ -17,10 +19,10 @@ HereToo Growth Profile：一个帮助用户认识成长偏好的独立问卷系�
 
 | 你要做什么 | 先读 | 主要文件 |
 | --- | --- | --- |
-| 理解产品、四维与边界 | [产品说明](docs/PRODUCT.md) | `lib/hgp.ts` |
-| 优化题库 | [题本与示例](docs/research/HGP_V02_QUESTIONNAIRE_2026-10-28.md)、[偏差审查](docs/research/HGP_V02_AUDIT_2026-10-28.md) | `lib/questions.json`、`tests/fixtures/approved-questions.md` |
-| 调整计分 | [计分与版本限制](docs/SCORING.md) | `lib/hgp.ts`、`tests/hgp.test.mjs` |
-| 优化画像与解释 | [16角色与访谈](docs/research/HGP_V02_PROFILES_VALIDATION_2026-10-28.md) | `lib/portrait.ts`、`lib/hgp.ts` |
+| 理解产品、四维与边界 | [产品说明](docs/PRODUCT.md) | `lib/bmti.ts` |
+| 优化题库 | [题本与示例](docs/research/BMTI_V02_QUESTIONNAIRE_2026-10-28.md)、[偏差审查](docs/research/BMTI_V02_AUDIT_2026-10-28.md) | `lib/questions.json`、`tests/fixtures/approved-questions.md` |
+| 调整计分 | [计分与版本限制](docs/SCORING.md) | `lib/bmti.ts`、`tests/bmti.test.mjs` |
+| 优化画像与解释 | [16角色与访谈](docs/research/BMTI_V02_PROFILES_VALIDATION_2026-10-28.md) | `lib/portrait.ts`、`lib/bmti.ts` |
 | 本地运行与测试 | [开发指南](docs/DEVELOPMENT.md) | `selfhost/`、`tests/` |
 | 协作提交与发布 | [贡献流程](CONTRIBUTING.md)、[部署说明](docs/DEPLOYMENT.md) | `.github/pull_request_template.md` |
 
@@ -50,8 +52,8 @@ node --env-file="$HOME/.config/bmti/development.env" selfhost-dist/server.mjs
 
 ```text
 app/                  用户界面、管理界面、共享API
-lib/hgp.ts            32题抽样、八端计分、四维判断、16角色名
-lib/questions.json    当前 HGP-0.2 题库
+lib/bmti.ts            32题抽样、八端计分、四维判断、16角色名
+lib/questions.json    当前 BMTI-0.2 题库
 lib/portrait.ts       个人画像呈现；兼容已有报告
 selfhost/             Node 24 + SQLite 运行与部署代码
 worker/               Sites / Cloudflare Worker 入口
@@ -62,7 +64,7 @@ docs/                 交接、设计、运维及研究材料
 
 ## 当前状态与重要限制
 
-- 测评版本 **HGP-0.2**，32题、八端各4题；呈现修订 **portrait-20261029**。每端至少3个有效答案，缺失不计0。少于24题不能形成完整角色。
+- 测评版本 **BMTI-0.2**，32题、八端各4题；呈现修订 **portrait-20261029**。每端至少3个有效答案，缺失不计0。少于24题不能形成完整角色。
 - 2026-10-29 已发布腾讯云与旧 Sites 两个站点，数据库相互独立。克隆仓库只获得源码和文档，没有历史答卷或生产权限。
 - 当前还没有完整多版本题库路由。记录只存题号列表，读取题文依赖当前题库；发布新题本前必须先解决进行中测试兼容。详见[版本限制](docs/SCORING.md#版本与兼容限制)。
 - 报告保存于服务端，浏览器随机 Cookie 标识归属；昵称不是账号，管理端不展示私人答卷。30天内可访问，过期数据在后续开测时清理，没有独立删除定时器。

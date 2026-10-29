@@ -4,10 +4,10 @@ import { buildSync } from "esbuild";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-const dir = mkdtempSync(join(tmpdir(), "hgp-test-"));
+const dir = mkdtempSync(join(tmpdir(), "bmti-test-"));
 buildSync({
-  entryPoints: ["lib/hgp.ts"],
-  outfile: join(dir, "hgp.mjs"),
+  entryPoints: ["lib/bmti.ts"],
+  outfile: join(dir, "bmti.mjs"),
   bundle: true,
   platform: "node",
   format: "esm",
@@ -21,7 +21,7 @@ buildSync({
 });
 const { presentPortrait } = await import(join(dir, "portrait.mjs"));
 const { questions, drawQuestions, makeReport, endpoints, roles } = await import(
-  join(dir, "hgp.mjs")
+  join(dir, "bmti.mjs")
 );
 process.on("exit", () => rmSync(dir, { recursive: true, force: true }));
 const answers = (values = {}) =>

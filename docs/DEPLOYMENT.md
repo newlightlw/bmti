@@ -14,7 +14,7 @@
 
 ## 腾讯云独立版
 
-`npm run build:selfhost`产生`selfhost-dist/server.mjs`、`client/`和`migrations/`。Node运行需要`HGP_ADMIN_HASH`、`HGP_PUBLIC_ORIGIN`、`HGP_DATABASE_PATH`与可选`PORT`，秘密只在运行时注入。SQLite必须放在稳定的数据目录，不随发布替换；连同WAL应使用SQLite在线备份或停服一致备份。
+`npm run build:selfhost`产生`selfhost-dist/server.mjs`、`client/`和`migrations/`。Node运行需要`BMTI_ADMIN_HASH`、`BMTI_PUBLIC_ORIGIN`、`BMTI_DATABASE_PATH`与可选`PORT`，秘密只在运行时注入。SQLite必须放在稳定的数据目录，不随发布替换；连同WAL应使用SQLite在线备份或停服一致备份。
 
 Nginx负责HTTPS、HTTP跳转和代理，Node仅监听回环。systemd模板限制写入目录、使用独立私有环境与开机自启。证书续期由服务器任务配置，实际续期和重启恢复需单独验收。
 

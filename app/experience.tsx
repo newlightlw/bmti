@@ -15,7 +15,8 @@ import {
   type Answer,
   type Endpoint,
   type Report,
-} from "@/lib/hgp";
+} from "@/lib/bmti";
+import { clearDraft, displayVersion, draftKey, readDraft } from "@/lib/legacy";
 import { presentPortrait } from "@/lib/portrait";
 type Item = { id: string; text: string };
 type Attempt = {
@@ -52,7 +53,7 @@ function Orbit({ small = false }: { small?: boolean }) {
       <span className="orbit-north">每一种走法，都有自己的光</span>
       <div className="orbit-center">
         <Compass strokeWidth={1} />
-        <b>HGP</b>
+        <b>BMTI</b>
         <span>YOUR INNER COMPASS</span>
       </div>
       <i className="orbit-dot dot-one" />
@@ -94,7 +95,7 @@ export default function Experience() {
             else {
               try {
                 const draft = JSON.parse(
-                  sessionStorage.getItem("hgp-draft-" + id) || "{}",
+                  readDraft(sessionStorage, id) || "{}",
                 );
                 setAnswers(draft);
                 const next = a.questions.findIndex(
@@ -123,7 +124,7 @@ export default function Experience() {
     if (attempt && !report) {
       try {
         sessionStorage.setItem(
-          "hgp-draft-" + attempt.id,
+          draftKey(attempt.id),
           JSON.stringify(answers),
         );
       } catch {
@@ -164,7 +165,7 @@ export default function Experience() {
         })),
       });
       setReport(b.report);
-      sessionStorage.removeItem("hgp-draft-" + attempt.id);
+      clearDraft(sessionStorage, attempt.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "报告生成失败，请重试");
@@ -179,7 +180,7 @@ export default function Experience() {
     try {
       const r = await fetch("/api/test?id=" + attempt.id, { method: "DELETE" });
       if (!r.ok) throw Error("暂时未能删除，请重试");
-      sessionStorage.removeItem("hgp-draft-" + attempt.id);
+      clearDraft(sessionStorage, attempt.id);
       setReport(null);
       setAttempt(null);
       setAnswers({});
@@ -202,11 +203,11 @@ export default function Experience() {
             <Compass size={22} />
           </span>
           <span>
-            HereToo<span className="brand-divider">/</span>
-            <b>同行画像</b>
+            BMTI<span className="brand-divider">/</span>
+            <b>自我探索</b>
           </span>
         </a>
-        <span className="edition">HGP · EXPLORATION 01</span>
+        <span className="edition">BMTI · EXPLORATION 01</span>
         <a href="/admin" className="admin-link">
           管理端 <ArrowRight size={14} />
         </a>
@@ -235,7 +236,7 @@ export default function Experience() {
                 </span>
                 <span>
                   {new Date(report.createdAt).toLocaleDateString("zh-CN")} ·{" "}
-                  {report.version}
+                  {displayVersion(report.version)}
                 </span>
               </div>
             </div>
@@ -309,7 +310,7 @@ export default function Experience() {
               <div className="report-disclaimer">
                 <b>这是一次认识自己的起点。</b>
                 <p>
-                  HGP
+                  BMTI
                   是尚待验证的原创偏好模型，不是心理诊断，也不测执行力或决定命运。并重、接近和信息不足都是真实可保留的结果；朋友怎样陪你，还需要你亲自确认。
                 </p>
               </div>
@@ -490,9 +491,9 @@ export default function Experience() {
                   先认识<span className="serif-word">自己。</span>
                 </h1>
                 <p className="hero-description">
-                  你从哪里找到动力，又喜欢怎样迈出第一步？
+                  了解自己，探索边界，成为更好的自己。
                   <br />
-                  用一段安静的时间，找到属于你的同行画像。
+                  Better Me Type Indicator · 从四个成长坐标开始探索。
                 </p>
                 <form
                   className="start-form"
@@ -577,7 +578,7 @@ export default function Experience() {
             <section className="landing-note">
               <b>陪你看世界，也陪你走过自己的低谷。</b>
               <p>
-                HGP
+                BMTI
                 为待验证的原创偏好模型。昵称和本次答案用于生成报告，报告30天内可访问，过期记录会在后续开测时清理，可由本浏览器删除；昵称不是账号，不支持通过昵称检索他人报告。
               </p>
             </section>
@@ -590,9 +591,9 @@ export default function Experience() {
         )}
       </main>
       <footer>
-        <span>HereToo · 同行画像</span>
+        <span>BMTI · Better Me Type Indicator</span>
         <span>每一种走法，都值得被认真理解。</span>
-        <span>HGP / 0.2</span>
+        <span>BMTI / 0.2</span>
       </footer>
     </div>
   );

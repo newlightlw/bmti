@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
 import { buildSync } from "esbuild";
 import {
   mkdtempSync,
@@ -10,7 +11,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-const root = mkdtempSync(join(tmpdir(), "hgp-sqlite-"));
+const root = mkdtempSync(join(tmpdir(), "bmti-sqlite-"));
 buildSync({
   entryPoints: ["selfhost/sqlite.ts"],
   bundle: true,
@@ -89,4 +90,16 @@ test("SQL values remain bound, not interpreted", async () => {
     7,
   );
   db.close();
+});
+test("existing migration metadata is reused after the BMTI rename", async () => {
+  const f = fixture("rename");
+  let binding = new SQLiteBinding(f.path, f.migrations);
+  await binding.prepare("INSERT INTO entries VALUES(?,?)").bind("retained",7).run();
+  binding.close();
+  const raw = new DatabaseSync(f.path);
+  raw.exec("ALTER TABLE _bmti_migrations RENAME TO _hgp_migrations");
+  raw.close();
+  binding = new SQLiteBinding(f.path, f.migrations);
+  assert.equal((await binding.prepare("SELECT value FROM entries WHERE id=?").bind("retained").first()).value,7);
+  binding.close();
 });

@@ -31,10 +31,10 @@ if any(p.exists() for p in paths):
     raise SystemExit('配置已存在，请复用或手动选择新的隔离目录。')
 password = secrets.token_urlsafe(32)
 content = '\n'.join([
-    'HGP_ADMIN_HASH=' + hashlib.sha256(password.encode()).hexdigest(),
-    'HGP_PUBLIC_ORIGIN=http://127.0.0.1:5189',
+    'BMTI_ADMIN_HASH=' + hashlib.sha256(password.encode()).hexdigest(),
+    'BMTI_PUBLIC_ORIGIN=http://127.0.0.1:5189',
     'PORT=5189',
-    'HGP_DATABASE_PATH=' + str(data / 'development.sqlite3'),
+    'BMTI_DATABASE_PATH=' + str(data / 'development.sqlite3'),
     '',
 ])
 for path, value in zip(paths, [content, '管理口令：' + password + '\n']):
@@ -61,24 +61,24 @@ node --env-file="$HOME/.config/bmti/development.env" selfhost-dist/server.mjs
 保持上述隔离服务运行，在另一终端执行：
 
 ```sh
-HGP_TEST_URL=http://127.0.0.1:5189 HGP_ADMIN_PASSWORD_FILE="$HOME/.config/bmti/admin-access.txt" python3 tests/api_smoke.py
+BMTI_TEST_URL=http://127.0.0.1:5189 BMTI_ADMIN_PASSWORD_FILE="$HOME/.config/bmti/admin-access.txt" python3 tests/api_smoke.py
 ```
 
-脚本会改变隔离库题量、写入合成记录并恢复32题，**不能对有真实用户的生产站运行整套测试**。改端口时同时修改`PORT`、`HGP_PUBLIC_ORIGIN`与测试URL，浏览器来源必须完全一致（localhost与127.0.0.1也不同）。
+脚本会改变隔离库题量、写入合成记录并恢复32题，**不能对有真实用户的生产站运行整套测试**。改端口时同时修改`PORT`、`BMTI_PUBLIC_ORIGIN`与测试URL，浏览器来源必须完全一致（localhost与127.0.0.1也不同）。
 
 ## 必需验证
 
-- `npm test`：9项，题库、抽样、16角色、并重、低符合、接近、缺失和呈现。
-- `npm run test:selfhost`：4项，重启持久化、事务回滚、迁移不可改、参数绑定。
+- `npm test`：12项，题库、抽样、16角色、并重、低符合、接近、缺失和呈现。
+- `npm run test:selfhost`：5项，重启持久化、事务回滚、迁移不可改、参数绑定。
 - `npm run typecheck`、`npm run build:selfhost`：类型和独立构建。
-- 修改API／持久化时再运行8项隔离HTTP测试。
+- 修改API／持久化时再运行10项隔离HTTP测试。
 - 修改页面时用浏览器检查完整答卷、旧报告重载及窄屏；桌面390px不等于真机验收。
 
 ## 可选：Sites / Vinext
 
 这条路径用于维护旧Sites站点，不是普通伙伴本地启动的前置条件。
 
-1. 将个人`HGP_ADMIN_HASH`放入忽略的`.dev.vars`。
+1. 将个人`BMTI_ADMIN_HASH`放入忽略的`.dev.vars`。
 2. `npm run build`生成Worker构建。
 3. 仅对全新本地D1库应用`drizzle/0000_peaceful_skaar.sql`一次：
 

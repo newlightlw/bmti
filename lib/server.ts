@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { environmentValue, legacy } from "./legacy";
 export function db() {
   if (!env.DB) throw new Error("数据服务暂时不可用");
   return env.DB;
@@ -60,23 +61,31 @@ export async function body(r: Request) {
   return result as Record<string, unknown>;
 }
 export async function admin(r: Request) {
-  const token = cookie(r, "hgp_admin");
-  if (!/^[a-f0-9]{64}$/.test(token)) return false;
-  return !!(await db()
-    .prepare(
-      "SELECT token_hash FROM admin_sessions WHERE token_hash=? AND expires_at>?",
-    )
-    .bind(await hash(token), Date.now())
-    .first());
+  for (const token of adminTokens(r)) {
+    const session = await db()
+      .prepare("SELECT token_hash FROM admin_sessions WHERE token_hash=? AND expires_at>?")
+      .bind(await hash(token), Date.now())
+      .first();
+    if (session) return true;
+  }
+  return false;
+}
+export function adminTokens(r: Request) {
+  return [...new Set([cookie(r, "bmti_admin"), cookie(r, legacy.adminCookie)])]
+    .filter((token) => /^[a-f0-9]{64}$/.test(token));
+}
+export function visitorToken(r: Request) {
+  return [cookie(r, "bmti_visitor"), cookie(r, legacy.visitorCookie)]
+    .find((token) => /^[a-f0-9]{64}$/.test(token)) || "";
 }
 export async function owner(r: Request) {
-  const token = cookie(r, "hgp_visitor");
+  const token = visitorToken(r);
   return /^[a-f0-9]{64}$/.test(token) ? hash(token) : null;
 }
 export function adminHash() {
   return (
-    (env as unknown as { HGP_ADMIN_HASH?: string }).HGP_ADMIN_HASH ||
-    process.env.HGP_ADMIN_HASH ||
+    environmentValue("BMTI_ADMIN_HASH", env as unknown as Record<string, string | undefined>) ||
+    environmentValue("BMTI_ADMIN_HASH", process.env) ||
     ""
   );
 }

@@ -1,6 +1,5 @@
 import {
   body,
-  cookie,
   db,
   hash,
   json,
@@ -8,6 +7,7 @@ import {
   owner,
   randomToken,
   setCookie,
+  visitorToken,
 } from "@/lib/server";
 import {
   drawQuestions,
@@ -15,7 +15,7 @@ import {
   questions,
   VERSION,
   type Answer,
-} from "@/lib/hgp";
+} from "@/lib/bmti";
 export async function GET(r: Request) {
   const url = new URL(r.url),
     id = url.searchParams.get("id");
@@ -70,7 +70,7 @@ export async function POST(r: Request) {
       /[\u0000-\u001f\u007f]/.test(b.nickname)
     )
       return json({ error: "请输入1—24个字符的昵称" }, 422);
-    const existing = cookie(r, "hgp_visitor");
+    const existing = visitorToken(r);
     const token = /^[a-f0-9]{64}$/.test(existing) ? existing : randomToken();
     const user = await hash(token),
       now = Date.now();
@@ -109,7 +109,7 @@ export async function POST(r: Request) {
         questions: selected.map((q) => ({ id: q.id, text: q.text })),
       },
       200,
-      { "Set-Cookie": setCookie(r, "hgp_visitor", token, 30 * 86400) },
+      { "Set-Cookie": setCookie(r, "bmti_visitor", token, 30 * 86400) },
     );
   }
   if (b.action === "submit") {

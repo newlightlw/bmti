@@ -3,16 +3,17 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "./env";
+import { environmentValue } from "../lib/legacy";
 import * as test from "../app/api/test/route";
 import * as admin from "../app/api/admin/route";
 
 process.umask(0o077);
 const directory = dirname(fileURLToPath(import.meta.url));
-const origin = process.env.HGP_PUBLIC_ORIGIN;
+const origin = environmentValue("BMTI_PUBLIC_ORIGIN", process.env);
 if (!origin || new URL(origin).origin !== origin || !/^https?:/.test(origin))
-  throw new Error("HGP_PUBLIC_ORIGIN must be an exact http(s) origin");
-if (!/^[a-f0-9]{64}$/.test(process.env.HGP_ADMIN_HASH || ""))
-  throw new Error("HGP_ADMIN_HASH must be configured");
+  throw new Error("BMTI_PUBLIC_ORIGIN must be an exact http(s) origin");
+if (!/^[a-f0-9]{64}$/.test(env.BMTI_ADMIN_HASH || ""))
+  throw new Error("BMTI_ADMIN_HASH must be configured");
 const port = Number(process.env.PORT || 8787);
 if (!Number.isInteger(port) || port < 1024 || port > 65535)
   throw new Error("PORT is invalid");
@@ -41,7 +42,7 @@ const server = createServer(async (incoming, outgoing) => {
           JSON.stringify({
             status: "ok",
             runtime: "node-sqlite",
-            version: "HGP-0.2",
+            version: "BMTI-0.2",
           }),
         );
       return;
@@ -94,7 +95,11 @@ const server = createServer(async (incoming, outgoing) => {
         ...(bytes > 0 ? { body: Buffer.concat(chunks) } : {}),
       });
       const response = await handler(request);
-      outgoing.writeHead(response.status, Object.fromEntries(response.headers));
+      const cookies = response.headers.getSetCookie();
+      outgoing.writeHead(response.status, {
+        ...Object.fromEntries(response.headers),
+        ...(cookies.length ? { "set-cookie": cookies } : {}),
+      });
       outgoing.end(Buffer.from(await response.arrayBuffer()));
       return;
     }
@@ -135,7 +140,7 @@ const server = createServer(async (incoming, outgoing) => {
     outgoing.end(incoming.method === "HEAD" ? undefined : data);
   } catch (error) {
     console.error(
-      "HGP request failed:",
+      "BMTI request failed:",
       error instanceof Error ? error.message : "unknown error",
     );
     if (!outgoing.headersSent)
@@ -149,7 +154,7 @@ const server = createServer(async (incoming, outgoing) => {
 server.requestTimeout = 15000;
 server.headersTimeout = 10000;
 server.listen(port, "127.0.0.1", () =>
-  console.log(`HGP listening on 127.0.0.1:${port}`),
+  console.log(`BMTI listening on 127.0.0.1:${port}`),
 );
 for (const signal of ["SIGTERM", "SIGINT"] as const)
   process.on(signal, () => {
